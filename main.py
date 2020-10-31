@@ -18,10 +18,9 @@ def main():
             pass
         else:
             log('loading thread {} with config {}'.format(i, config))
-            threads.append(Site(i, 'tasks/' + config))
+            threads.append(Site(i, 'tasks/' + config, True))
             threads[i].start()
             i += 1
-
 
 if __name__ == '__main__':
     main()

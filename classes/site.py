@@ -5,45 +5,57 @@ from time import time, sleep
 from classes.logger import Logger
 from classes.product import Product
 
+from webbot import Browser 
 
 class Site(threading.Thread):
-    def __init__(self, tid, config_filename):
+    def __init__(self, tid, config_filename, headless = False):
         threading.Thread.__init__(self)
         self.tid = tid
         self.start_time = time()
         self.log = Logger(tid).log
+        self.web = Browser(showWindow=headless)
         with open(config_filename) as task_file:
             self.T = load(task_file)
         with open('config.json') as config_file:
             self.C = load(config_file)
 
-    def wait(self):
-        self.log('sleeping {} second(s)'.format(self.C['sleep_time']))
-        sleep(self.C['sleep_time'])
+    def wait(self, time):
+        self.log('sleeping {} second(s)'.format(time))
+        sleep(time)
 
     def get_products(self):
         self.log('getting some products')
-        # idk make some requests here??
-        self.wait()
-
-    def match_products(self):
-        self.log('comparing products', 'red')
-        # idk do some keyword checking??
-        self.wait()
+        self.web.go_to(self.T["link"])
 
     def add_to_cart(self):
         self.log('adding product to cart', 'blue')
-        # idk add something to cart??
-        self.wait()
+        self.web.click('Add to Bag')
+        # self.wait()
 
     def checkout(self):
         self.log('checking out')
-        # idk pay for the things in your cart??
-        self.wait()
+        while not self.web.exists('Checkout', loose_match=False):
+            self.wait(0.02)
+        self.web.click('Checkout')
+        self.web.click('')
+        self.web.type(self.T["email"] , into='Login')
+        self.web.type(self.T["password"] , into='Password')
+        self.web.click(id="shipping-method")
+        self.web.click('Next Day')
+        self.web.click('Checkout as Registered User')
+        self.wait(0.1)
+
+        self.web.click(id="dwfrm_billing_paymentMethods_creditCardList")
+        self.web.click(self.T["card"])
+        self.web.type(self.T["cvv"] , id="dwfrm_billing_paymentMethods_creditCard_cvn")
+        while not self.web.exists('Continue to Final Review', loose_match=False):
+            self.wait(0.02)
+        self.web.click('Continue to Final Review')
+        # self.wait()
 
     def run(self):
         self.get_products()
-        self.match_products()
         self.add_to_cart()
         self.checkout()
+        self.wait(30)
         self.log('time to checkout: {} sec'.format(abs(self.start_time-time())), 'green')
