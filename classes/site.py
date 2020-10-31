@@ -23,6 +23,12 @@ class Site(threading.Thread):
         self.log('sleeping {} second(s)'.format(time))
         sleep(time)
 
+    def login(self):
+        self.web.go_to('https://catalog.usmint.gov/account-login')
+        self.web.type(self.T["email"] , into='Login')
+        self.web.type(self.T["password"] , into='Password')
+        self.web.click('Sign In')
+
     def get_products(self):
         self.log('getting some products')
         self.web.go_to(self.T["link"])
@@ -37,13 +43,17 @@ class Site(threading.Thread):
         while not self.web.exists('Checkout', loose_match=False):
             self.wait(0.02)
         self.web.click('Checkout')
-        self.web.click('')
-        self.web.type(self.T["email"] , into='Login')
-        self.web.type(self.T["password"] , into='Password')
         self.web.click(id="shipping-method")
         self.web.click('Next Day')
-        self.web.click('Checkout as Registered User')
         self.wait(0.1)
+
+        # self.web.type(self.T["email"] , into='Login')
+        # self.web.type(self.T["password"] , into='Password')
+        # self.web.click('Checkout as Registered User')
+        
+        self.web.click(id="dwfrm_singleshipping_addressList")
+        self.web.click(self.T["address"])
+        self.wait(0.2)
 
         self.web.click(id="dwfrm_billing_paymentMethods_creditCardList")
         self.web.click(self.T["card"])
@@ -54,6 +64,7 @@ class Site(threading.Thread):
         # self.wait()
 
     def run(self):
+        self.login()
         self.get_products()
         self.add_to_cart()
         self.checkout()
